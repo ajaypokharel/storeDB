@@ -1,13 +1,24 @@
-import os
-from flask import Flask, request, render_template, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-import pandas as pd
+import os, io
+import random
+from dotenv import load_dotenv
 
+from flask import Flask, request, render_template, jsonify, Response
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+
+from werkzeug.security import generate_password_hash, check_password_hash
+
+import pandas as pd
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+import seaborn as sns
+
+
+load_dotenv()
 
 def get_secrect_key():
-    return os.environ.get("SECRET_KEY")
+    data = os.environ.get("SECRET_KEY")
+    return data
 
 app = Flask(__name__)
 app.secret_key = get_secrect_key()
@@ -82,6 +93,7 @@ def login():
 def logout():
     logout_user()
     return jsonify({'message': 'User loggedOut!'})
+
 @app.route('/profile/<int:user_id>', methods=['GET', 'DELETE'])
 @login_required
 def profile(user_id):
@@ -135,9 +147,9 @@ def query_file():
     file_path = uploaded_file.filepath
 
     if file_path.endswith('.csv'):
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(file_path, encoding='unicode_escape')
     elif file_path.endswith('.xlsx'):
-        df = pd.read_excel(file_path)
+        df = pd.read_excel(file_path, encoding='unicode_escape')
     else:
         return jsonify({'error': 'Unsupported file format'})
 
@@ -147,6 +159,67 @@ def query_file():
     except Exception as e:
         return jsonify({'error': str(e)})
 
+
+@app.route('/histogram', methods=['POST'])
+@login_required
+def histogram():
+    data = request.json
+    file_id = data['file_id']
+    column = data['column']
+
+    uploaded_file = UploadedFile.query.get_or_404(file_id)
+    file_path = uploaded_file.filepath
+
+    if file_path.endswith('.csv'):
+        data = pd.read_csv(file_path, encoding='unicode_escape')
+    elif file_path.endswith('.xlsx'):
+        data = pd.read_excel(file_path, encoding='unicode_escape')
+    else:
+        return jsonify({'error': 'Unsupported file format'})
+    
+    #  create_histogram():
+    fig = Figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.hist(data[column], bins=range(min(data[column]), max(data[column]) + 1), edgecolor='black')
+    axis.set_title('Histogram')
+    axis.set_xlabel('Value')
+    axis.set_ylabel('Frequency')
+
+    # Save histogram image to a file
+    img_bytes = io.BytesIO()
+    FigureCanvas(fig).print_png(img_bytes)
+    return Response(img_bytes.getvalue(), mimetype='image/png')
+
+@app.route('/plot', methods=['POST'])
+@login_required
+def plot_scatter():
+    data = request.json
+    file_id = data['file_id']
+    x = data['x']
+    y = data['y']
+
+    uploaded_file = UploadedFile.query.get_or_404(file_id)
+    file_path = uploaded_file.filepath
+
+    if file_path.endswith('.csv'):
+        data = pd.read_csv(file_path, encoding='unicode_escape')
+    elif file_path.endswith('.xlsx'):
+        data = pd.read_excel(file_path, encoding='unicode_escape')
+    else:
+        return jsonify({'error': 'Unsupported file format'})
+    
+    xs = data[x]
+    ys = data[y]
+    fig = Figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.scatter(xs, ys)
+    axis.set_title('Scatter Plot')
+    axis.set_xlabel(x)
+    axis.set_ylabel(y)
+
+    output = io.BytesIO()
+    FigureCanvas(fig).print_png(output)
+    return Response(output.getvalue(), mimetype='image/png')
 
 @app.before_request
 def create_tables():
