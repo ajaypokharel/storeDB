@@ -1,32 +1,53 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
 function RegisterPage() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [password, setPassword] = useState('');
+  const [success, setSuccess]= useState(false)
+  const navigate = useNavigate();
 
-  const handleFirstNameChange = (event) => {
-    setFirstName(event.target.value);
-  };
-
-  const handleLastNameChange = (event) => {
-    setLastName(event.target.value);
+  const handleFullNameChange = (event) => {
+    setFullName(event.target.value);
   };
 
   const handleEmailChange = (event) => {
     setEmail(event.target.value);
   };
 
-  const handlePhoneNumberChange = (event) => {
-    setPhoneNumber(event.target.value);
+  const handlePasswordChange = (event) => {
+    setPassword(event.target.value);
   };
+
+  const handleUsernameChange = (event) => {
+    setUsername(event.target.value);
+  };
+
+  useEffect(() => {
+    if (success){
+      navigate('/')
+    }
+  }, [success])
 
   const handleSubmit = (event) => {
     event.preventDefault();
     // Handle form submission logic here
-    console.log("Form submitted with:", { firstName, lastName, email, phoneNumber });
+    const full_name = fullName
+    axios.post('http://127.0.0.1:5000/signup', {full_name, email, password, username})
+    .then(response => {
+      // Handle success
+      console.log('Successs', response.data)
+      setSuccess(true)
+
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+    console.log("Form submitted with:", { fullName, email, password, username });
   };
 
   return (
@@ -40,29 +61,18 @@ function RegisterPage() {
         </div>
         <form onSubmit={handleSubmit} className="w-full max-w-sm">
           <div className="mb-4">
-            <label htmlFor="firstName" className="block text-gray-700 font-semibold">First Name:</label>
+            <label htmlFor="fullName" className="block text-gray-700 font-semibold">Full Name</label>
             <input
               type="text"
-              id="firstName"
-              value={firstName}
-              onChange={handleFirstNameChange}
+              id="fullName"
+              value={fullName}
+              onChange={handleFullNameChange}
               className="w-full border border-gray-400 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring focus:border-blue-500"
               placeholder="Enter your first name"
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="lastName" className="block text-gray-700 font-semibold">Last Name:</label>
-            <input
-              type="text"
-              id="lastName"
-              value={lastName}
-              onChange={handleLastNameChange}
-              className="w-full border border-gray-400 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring focus:border-blue-500"
-              placeholder="Enter your last name"
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 font-semibold">Email Address:</label>
+            <label htmlFor="email" className="block text-gray-700 font-semibold">Email</label>
             <input
               type="email"
               id="email"
@@ -72,13 +82,24 @@ function RegisterPage() {
               placeholder="Enter your email address"
             />
           </div>
-          <div className="mb-6">
-            <label htmlFor="phoneNumber" className="block text-gray-700 font-semibold">Phone Number:</label>
+          <div className="mb-4">
+            <label htmlFor="username" className="block text-gray-700 font-semibold">Username</label>
             <input
-              type="tel"
-              id="phoneNumber"
-              value={phoneNumber}
-              onChange={handlePhoneNumberChange}
+              type="text"
+              id="username"
+              value={username}
+              onChange={handleUsernameChange}
+              className="w-full border border-gray-400 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring focus:border-blue-500"
+              placeholder="Enter your first name"
+            />
+          </div>
+          <div className="mb-6">
+            <label htmlFor="password" className="block text-gray-700 font-semibold">Password</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={handlePasswordChange}
               className="w-full border border-gray-400 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring focus:border-blue-500"
               placeholder="Enter your phone number"
             />

@@ -1,10 +1,10 @@
 import os, io
-import random
 from dotenv import load_dotenv
 
 from flask import Flask, request, render_template, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_cors import CORS
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -21,6 +21,7 @@ def get_secrect_key():
     return data
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = get_secrect_key()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://ajaypokharel:12345@localhost/User'
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -35,6 +36,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     full_name = db.Column(db.String(100), unique=False, nullable=False)
     password = db.Column(db.String(100), nullable=False)
+    uploaded_files = db.relationship('UploadedFile', backref='user', lazy=True)
 
     def to_dict(self):
         return {'id': self.id, 'username': self.username, 'email': self.email, 'full_name': self.full_name}
@@ -45,6 +47,9 @@ class UploadedFile(db.Model):
     filename = db.Column(db.String(100), unique=True, nullable=False)
     filepath = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    def to_dict(self):
+        return {'id': self.id, 'filename': self.filename, 'filepath': self.filepath, 'user_id': self.user_id}
 
 
 @login_manager.user_loader
@@ -124,20 +129,26 @@ def get_user(user_id):
     return jsonify(user.to_dict())
 
 @app.route('/upload', methods=['POST'])
-@login_required
+# @login_required
 def upload_file():
     file = request.files['file']
     filename = file.filename
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
-    uploaded_file = UploadedFile(filename=filename, filepath=filepath, user_id=current_user.id)
+    uploaded_file = UploadedFile(filename=filename, filepath=filepath, user_id=2)
     db.session.add(uploaded_file)
     db.session.commit()
     return jsonify({'message': 'File uploaded successfully'}), 201
 
+@app.route('/uploaded/<int:user_id>', methods=['GET'])
+def get_uploaded_files(user_id):
+    user = User.query.get_or_404(user_id)
+    uploaded_files = [file.to_dict() for file in user.uploaded_files]
+    return jsonify(uploaded_files), 200
+
 
 @app.route('/query', methods=['POST'])
-@login_required
+# @login_required
 def query_file():
     data = request.json
     file_id = data['file_id']
