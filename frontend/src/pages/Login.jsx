@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'
+import { useDispatch } from 'react-redux';
+import { login } from '../redux/authenticationSlice';
+
 
 function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [success, setSuccess]= useState(false)
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
 
   const handleUsernameChange = (event) => {
@@ -19,30 +21,33 @@ function LoginPage() {
     setPassword(event.target.value);
   };
 
-  const handleLogin = () => {
+  const handleLogin = (event) => {
+    event.preventDefault();
+
     // Handle login logic here
     axios.post('http://127.0.0.1:5000/login', {username, password}, {
       headers: { "Content-Type": "multipart/form-data" }
     })
     .then(response => {
       // Handle success
-      console.log('Successs', response.data)
+      console.log('Successs', response)
       setSuccess(true)
+      dispatch(login({userId: response.data.user_id}))
     })
     .catch(error => {
-      console.error('Error uploading file:', error);
+      console.error('Error Logging In:', error);
     });
+  
   };
 
   useEffect(() => {
     if (success){
-      navigate('/')
+      navigate('/upload')
     }
   }, [success])
 
   return (
     <>
-    <Navbar />
     <div className="flex flex-col items-center justify-center h-screen">
       <div className="bg-gray-200 rounded-lg p-8">
         <div className="mb-4 text-center">

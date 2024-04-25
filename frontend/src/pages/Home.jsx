@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Navbar from '../components/Navbar';
-import { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 
 function UploadPage() {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [query, setQuery] = useState('');
-  // const [result, setResult] = useState('');
   const [fileInfo, setFileInfo] = useState(null);
+  const userId = useSelector(state => state.authentication.userId);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -24,6 +22,7 @@ function UploadPage() {
 
     const formData = new FormData();
     formData.append('file', selectedFile);
+    formData.append('user_id', userId)
 
     axios.post('http://127.0.0.1:5000/upload', formData, {
       headers: {
@@ -32,7 +31,7 @@ function UploadPage() {
     })
     .then(response => {
       // Handle success
-      console.log(response.data);
+      alert("File Uploaded")
       setSelectedFile(null)
     })
     .catch(error => {
@@ -51,15 +50,6 @@ function UploadPage() {
     setFileInfo(file ? { name: file.name, size: file.size } : null);
   };
 
-  const handleQueryChange = (event) => {
-    setQuery(event.target.value);
-  };
-
-  const handleAsk = () => {
-    // Handle query logic here
-    console.log("Query:", query);
-    // You can perform any actions here based on the query
-  };
 
   useEffect(() => {
     
@@ -67,7 +57,6 @@ function UploadPage() {
 
   return (
     <>
-      <Navbar />
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="bg-gray-200 rounded-lg p-8">
           <div className="mb-4 text-center">
@@ -104,20 +93,6 @@ function UploadPage() {
           <button onClick={handleUpload} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
             Upload
           </button>
-        </div>
-        <div className="bg-gray-200 rounded-lg p-8 mt-4 w-full max-w-lg">
-          <div className="flex items-center">
-            <input
-              type="text"
-              value={query}
-              onChange={handleQueryChange}
-              placeholder="Type your query here"
-              className="border border-gray-400 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring focus:border-blue-500 w-full"
-            />
-            <button onClick={handleAsk} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-8 rounded ml-2">
-              Ask
-            </button>
-          </div>
         </div>
       </div>
     </>

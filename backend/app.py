@@ -1,9 +1,9 @@
 import os, io
 from dotenv import load_dotenv
+import json
 
 from flask import Flask, request, render_template, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_cors import CORS
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -27,16 +27,17 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://ajaypokharel:12345@localho
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
 db = SQLAlchemy(app)
-login_manager = LoginManager(app)
 
 # User model
-class User(UserMixin, db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     full_name = db.Column(db.String(100), unique=False, nullable=False)
     password = db.Column(db.String(100), nullable=False)
     uploaded_files = db.relationship('UploadedFile', backref='user', lazy=True)
+    is_admin = db.Column(db.Boolean, default=False)
+    is_logged_in = db.Column(db.Boolean, default=False) 
 
     def to_dict(self):
         return {'id': self.id, 'username': self.username, 'email': self.email, 'full_name': self.full_name}
@@ -51,10 +52,6 @@ class UploadedFile(db.Model):
     def to_dict(self):
         return {'id': self.id, 'filename': self.filename, 'filepath': self.filepath, 'user_id': self.user_id}
 
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 @app.route('/')
 def index():
@@ -82,60 +79,73 @@ def signup_post():
 
     return jsonify({"message": "User created"}), 201
 
+
+@app.route('/make-admin/<int:user_id>', methods=['POST'])
+def make_admin(user_id):
+    user = User.query.get(user_id)
+    if user:
+        user.is_admin = True
+        db.session.commit()
+        return jsonify({'message': f'User with ID {user_id} is now an admin'}), 200
+    else:
+        return jsonify({'message': 'User not found'}), 404
+
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form['username']
     password = request.form['password']
     user = User.query.filter_by(username=username).first()
     if user and check_password_hash(user.password, password):
-        login_user(user)
-        return jsonify({'message': 'User loggedin succesfully'})
+        user.is_logged_in = True
+        db.session.commit()
+        return jsonify({'username': user.username, 'email': user.email, 'user_id': user.id})
     else:
         return 'Invalid username or password'
 
-@app.route('/logout')
-@login_required
+@app.route('/logout', methods=['POST'])
 def logout():
-    logout_user()
-    return jsonify({'message': 'User loggedOut!'})
+    user_id = request.form['user_id']
+    user = User.query.get_or_404(user_id)
 
-@app.route('/profile/<int:user_id>', methods=['GET', 'DELETE'])
-@login_required
+    if user:
+        user.is_logged_in = False
+        db.session.commit()
+        return jsonify({'message': 'User loggedOut succesfully'})
+    else:
+        return jsonify({'message': 'Invalid username'})
+
+@app.route('/profile/<int:user_id>', methods=['GET', 'DELETE', 'PUT'])
 def profile(user_id):
     user = User.query.get_or_404(user_id)
-    if user != current_user:
-        return 'Unauthorized', 403
 
     if request.method == 'DELETE':
         db.session.delete(user)
         db.session.commit()
-        logout_user()
-        return 'Profile deleted successfully'
-
+        return 'Profile deleted successfully' 
     return jsonify({'username': user.username, 'email': user.email})
 
-@app.route('/api/user/<int:user_id>', methods=['GET'])
-def get_user(user_id):
-    """Get user information from database.
-    Parameters:
-        - user_id (int): Unique identifier for user.
-    Returns:
-        - dict: Dictionary containing user information.
-    Processing Logic:
-        - Query database for user information.
-        - Convert user information to dictionary.
-        - Return dictionary as JSON response."""
+@app.route('/check-admin/<int:user_id>', methods=['GET'])
+def check_admin(user_id):
     user = User.query.get_or_404(user_id)
-    return jsonify(user.to_dict())
+
+    if user.is_admin:
+        return jsonify({'result': True})
+    else:
+        return jsonify({'result': False})
 
 @app.route('/upload', methods=['POST'])
-# @login_required
 def upload_file():
     file = request.files['file']
+    user_id = request.form['user_id']
+    # authenticate users
+    user = User.query.get_or_404(user_id)
+    if user.is_logged_in == False:
+        return jsonify({"message": "Not Authenticated"}), 401
+    
     filename = file.filename
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
-    uploaded_file = UploadedFile(filename=filename, filepath=filepath, user_id=2)
+    uploaded_file = UploadedFile(filename=filename, filepath=filepath, user_id=user_id)
     db.session.add(uploaded_file)
     db.session.commit()
     return jsonify({'message': 'File uploaded successfully'}), 201
@@ -143,12 +153,39 @@ def upload_file():
 @app.route('/uploaded/<int:user_id>', methods=['GET'])
 def get_uploaded_files(user_id):
     user = User.query.get_or_404(user_id)
+    if user.is_logged_in == False:
+        return jsonify({"message": "Not Authenticated"}), 401
     uploaded_files = [file.to_dict() for file in user.uploaded_files]
     return jsonify(uploaded_files), 200
 
+@app.route('/users/<int:user_id>/uploaded/<int:file_id>', methods=['GET', 'DELETE'])
+def get_uploaded_file(user_id, file_id):
+    try:
+        user = User.query.get_or_404(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
 
+        # authenticate users
+        if user.is_logged_in == False:
+            return jsonify({"message": "Not Authenticated"}), 401
+
+        # Query the UploadedFile by its ID
+        file = UploadedFile.query.filter_by(id=file_id, user_id=user_id).first()
+
+        if not file:
+            return jsonify({'error': 'File not found'}), 404
+  
+        if request.method == 'DELETE':
+            db.session.delete(file)
+            db.session.commit()
+            return jsonify({'message': 'File Deleted Successfully'}), 200
+
+        return jsonify({'filename': file.filename}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 @app.route('/query', methods=['POST'])
-# @login_required
 def query_file():
     data = request.json
     file_id = data['file_id']
@@ -166,13 +203,13 @@ def query_file():
 
     try:
         result = df.query(query).to_dict(orient='records')
-        return jsonify(result)
+        result_json = [json.loads(json.dumps(record)) for record in result]
+        return result_json
     except Exception as e:
         return jsonify({'error': str(e)})
 
 
 @app.route('/histogram', methods=['POST'])
-@login_required
 def histogram():
     data = request.json
     file_id = data['file_id']
@@ -202,7 +239,6 @@ def histogram():
     return Response(img_bytes.getvalue(), mimetype='image/png')
 
 @app.route('/plot', methods=['POST'])
-@login_required
 def plot_scatter():
     data = request.json
     file_id = data['file_id']

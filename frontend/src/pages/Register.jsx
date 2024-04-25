@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 
 function RegisterPage() {
   const [fullName, setFullName] = useState('');
@@ -52,7 +51,6 @@ function RegisterPage() {
 
   return (
     <>
-    <Navbar/>
     <div className="flex flex-col items-center justify-center h-screen">
       <div className="bg-gray-200 rounded-lg p-8">
         <div className="mb-4 text-center">

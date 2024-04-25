@@ -1,0 +1,80 @@
+.user-session-container {
+    margin-top: 20px;
+  }
+  
+  .user-session-heading {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  
+  .user-session-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .user-session-table th,
+  .user-session-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+  }
+  
+  .user-session-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+/* The Modal (background) */
+.modal {
+  display: grid; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  border-radius: 20px;
+  border-color: #7144ed;
+  border-width: 2px;
+  width:70%;
+  height: 100%;
+}
+
+/* The Close Button */
+.close {
+  color: #ed1111;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Modal Header */
+.modal h2 {
+  margin-top: 0;
+}
+
+/* Modal Body */
+.modal pre {
+  white-space: pre-wrap;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}

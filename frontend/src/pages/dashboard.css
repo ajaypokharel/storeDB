@@ -1,0 +1,19 @@
+.dashboard-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .dashboard-heading {
+    text-align: center;
+  }
+  
+  .chart-container {
+    margin-top: 30px;
+  }
+  
+  .chart {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  

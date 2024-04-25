@@ -1,0 +1,80 @@
+.profile-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .profile-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .profile-header h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  
+  .profile-header p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 10px;
+  }
+  
+  .profile-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  
+  .edit-profile-button,
+  .delete-profile-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin-right: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .edit-profile-button:hover,
+  .delete-profile-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .uploaded-files h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  
+  .uploaded-files ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .uploaded-files li {
+    margin-bottom: 10px;
+  }
+  
+  .uploaded-files p {
+    font-size: 16px;
+    margin-bottom: 5px;
+  }
+  
+  .delete-file-button {
+    padding: 5px 10px;
+    font-size: 14px;
+    background-color: #f44336;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .delete-file-button:hover {
+    background-color: #d32f2f;
+  }
+  
