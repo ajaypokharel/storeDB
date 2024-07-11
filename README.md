@@ -1,5 +1,7 @@
 # TalkToData
 
+![Project Logo](logo.png)
+
 ## Introduction
 
 The TalkToData project addresses the challenge of data management and analysis for users who lack database expertise. The project aims to facilitate data-driven decision-making across various domains by providing user-friendly tools for data manipulation and analysis.
